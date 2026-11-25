@@ -2,7 +2,7 @@
 """
 LuminaSlide SPK 打包脚本（遵循群晖 DSM 7 规范：USTAR_FORMAT + 显式 DIRTYPE + checksum + reloadui）
 用法：python3 build-spk.py [version]
-产出：dist/LuminaSlide_<version>_noarch.spk
+产出：dist/LuminaSlide_<version>_all.spk
 """
 import hashlib
 import io
@@ -106,7 +106,7 @@ def main():
     override_ver = sys.argv[1] if len(sys.argv) > 1 else None
     version, info_txt = read_info(override_ver)
     os.makedirs(DIST_DIR, exist_ok=True)
-    out_spk = os.path.join(DIST_DIR, f"LuminaSlide_{version}_noarch.spk")
+    out_spk = os.path.join(DIST_DIR, f"LuminaSlide_{version}_all.spk")
 
     pkg_tgz = build_package_tgz()
     pkg_md5 = hashlib.md5(pkg_tgz).hexdigest()

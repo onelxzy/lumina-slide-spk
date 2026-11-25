@@ -53,10 +53,21 @@ lumina-slide-spk/
 
 ## 安装与使用
 
+### 依赖
+
+套件在 `INFO` 中通过 `install_dep_packages` 声明了依赖，DSM 套件中心会在安装时自动检查并提示安装缺失项：
+
+| 依赖 | 包名 | 说明 |
+|---|---|---|
+| Node.js 22 | `Node.js_v22` | 后端运行时（代码兼容 v18/v20/v22） |
+| ffmpeg | `ffmpeg8` | 服务端转码与降采样（代码兼容 ffmpeg6/7/8） |
+
+> 若套件中心未自动安装，请手动从「套件中心 → 社群」安装 SynoCommunity 的 **ffmpeg8**。
+
 ### 方式一：群晖 DSM 套件中心（推荐）
 
-1. 前往 [Releases](https://github.com/onelxzy/lumina-slide-spk/releases) 下载最新的 `LuminaSlide_*_noarch.spk`。
-2. 确保 DSM 套件中心已安装 **Node.js v22**（或 v20/v18）与 **ffmpeg**。
+1. 前往 [Releases](https://github.com/onelxzy/lumina-slide-spk/releases) 下载最新的 `LuminaSlide_*_all.spk`。
+2. 确保上述依赖已安装（套件中心会自动提示）。
 3. 打开 DSM「套件中心 → 手动安装」，上传 `.spk`（默认 HTTP 端口 `18666`，可在安装向导中自定义）。
 4. 启动套件后点击「打开」，或访问 `http://<NAS-IP>:18666/admin` 添加本地路径 / WebDAV 来源并执行索引扫描。
 
@@ -67,10 +78,10 @@ lumina-slide-spk/
 需要 Python 3.10+（纯标准库，无额外依赖）：
 
 ```bash
-python3 build.py 1.0.0
+python3 build.py 1.0.2
 ```
 
-产物将生成在 `dist/LuminaSlide_1.0.0_noarch.spk`。推送 `v*` 标签（如 `git tag v1.0.0 && git push origin v1.0.0`）时，GitHub Actions 会自动执行语法检查、构建并发布 Release。
+产物将生成在 `dist/LuminaSlide_<version>_all.spk`。推送 `v*` 标签（如 `git tag v1.0.2 && git push origin v1.0.2`）时，GitHub Actions 会自动执行语法检查、构建并发布 Release。
 
 ## 开源协议
 

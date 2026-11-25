@@ -57,8 +57,8 @@ jobs:
           body: |
             LuminaSlide ${{ steps.ver.outputs.version }}
 
-            架构：noarch（全机型通用，依赖套件中心 Node.js 22+ 与 ffmpeg）
+            架构：全机型通用（x86_64 / armv8）`n`n依赖：Node.js v22、ffmpeg（套件中心会自动提示安装）
 
             安装：套件中心 → 手动安装 → 选择 .spk
           files: |
-            dist/LuminaSlide_${{ steps.ver.outputs.version }}_noarch.spk
+            dist/LuminaSlide_${{ steps.ver.outputs.version }}_all.spk
