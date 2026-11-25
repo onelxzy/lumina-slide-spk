@@ -124,28 +124,42 @@
 
   // ---------- 预取（回调驱动，无循环） ----------
   function fillBuffer() {
-    if (!S.booted) return;
+    if (!S.booted || !S.playing || !S.currentMeta) return;
     if (S.buffer.length + S.inflight >= S.prefetch) return;
     if (S.errCount >= MAX_ERR) return;
 
     S.inflight++;
+    var released = false;
+    var release = function () {
+      if (!released) { released = true; S.inflight = Math.max(0, S.inflight - 1); }
+    };
+    var safetyT = setTimeout(release, 35000);
+
     api('GET', '/api/next')
       .then(function (d) {
-        S.inflight--;
         if (!d || d.empty) {
+          clearTimeout(safetyT);
+          release();
           if (!S.poolTotal && !S.total) showEmpty(d);
           return;
         }
         var im = new Image();
         im.onload = function () {
+          clearTimeout(safetyT);
+          release();
           S.buffer.push({ meta: d, image: im });
           S.errCount = 0;
         };
-        im.onerror = function () { S.errCount++; };
+        im.onerror = function () {
+          clearTimeout(safetyT);
+          release();
+          S.errCount++;
+        };
         im.src = d.img;
       })
       .catch(function () {
-        S.inflight--;
+        clearTimeout(safetyT);
+        release();
         S.errCount++;
       });
   }
@@ -235,7 +249,12 @@
       }
       syncVideoPip(S.front);
       syncMediaSessionMeta(item);
-      fillBuffer();
+      if (!S.fillingStarted) {
+        S.fillingStarted = true;
+        keepFilling();
+      } else {
+        fillBuffer();
+      }
     }
 
     back.style.zIndex = '3';
@@ -904,7 +923,6 @@
       if (!S.poolTotal) { showEmpty(s); return; }
 
       S.booted = true;
-      keepFilling();
       if (s.current && s.current.img) {
         showItem(s.current);
       } else {
