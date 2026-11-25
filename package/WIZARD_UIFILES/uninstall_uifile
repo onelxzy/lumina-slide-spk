@@ -1,0 +1,16 @@
+[{
+  "step_title": "Uninstall LuminaSlide",
+  "items": [{
+    "type": "singleselect",
+    "desc": "Choose how to handle existing application data:",
+    "subitems": [{
+      "key": "wizard_keep_data",
+      "desc": "Keep configuration, index database, and cache for future reinstallation",
+      "defaultValue": true
+    }, {
+      "key": "wizard_delete_data",
+      "desc": "Delete all application data (source image files will not be affected)",
+      "defaultValue": false
+    }]
+  }]
+}]

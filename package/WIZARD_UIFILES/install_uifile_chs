@@ -1,0 +1,15 @@
+[{
+  "step_title": "拾光轮播 (LuminaSlide) · 基础设置",
+  "items": [{
+    "type": "textfield",
+    "desc": "服务端口（默认 18666）",
+    "subitems": [{
+      "key": "wizard_port",
+      "desc": "",
+      "validator": {
+        "allowBlank": true,
+        "regex": { "expr": "/^\\d{2,5}$/", "errorText": "请输入 2-5 位数字端口" }
+      }
+    }]
+  }]
+}]

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>登录 · 拾光轮播 LuminaSlide</title>
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background:#0b0e14; color:#e8ecf3; padding:20px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  }
+  .card {
+    width:100%; max-width:380px;
+    background:#131822; border:1px solid #232b3a; border-radius:16px;
+    padding:28px 26px; box-shadow:0 20px 60px rgba(0,0,0,.55);
+  }
+  .head { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+  .head img { width:38px; height:38px; border-radius:9px; }
+  .head h1 { font-size:17px; font-weight:600; }
+  .head p { font-size:12px; color:#8593a8; }
+  label { display:block; font-size:13px; color:#b9c2d0; margin-bottom:14px; }
+  input {
+    width:100%; margin-top:6px; padding:10px 12px;
+    background:#0e1219; border:1px solid #232b3a; border-radius:9px;
+    color:#e8ecf3; font-size:14px; outline:none;
+  }
+  input:focus { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.15); }
+  button {
+    width:100%; padding:11px; border:none; border-radius:9px;
+    background:linear-gradient(135deg,#3b82f6,#6366f1); color:#fff;
+    font-size:14px; font-weight:600; cursor:pointer; margin-top:4px;
+  }
+  button:hover { filter:brightness(1.08); }
+  .msg { font-size:12.5px; margin-top:12px; min-height:18px; text-align:center; color:#f29296; }
+  .tip {
+    margin-top:16px; padding:10px 12px; border-radius:9px;
+    background:#171e2b; border:1px solid #263145;
+    font-size:12px; color:#93a4bd; line-height:1.5;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="head">
+    <img src="/icon.svg" alt="">
+    <div>
+      <h1>拾光轮播 · LuminaSlide</h1>
+      <p>请输入访问凭据以继续</p>
+    </div>
+  </div>
+  <form id="loginForm">
+    <label>用户名
+      <input type="text" id="user" value="admin" autocomplete="username" required>
+    </label>
+    <label>密码
+      <input type="password" id="pass" autocomplete="current-password" required autofocus>
+    </label>
+    <button type="submit">登录</button>
+  </form>
+  <div id="msg" class="msg"></div>
+  <div id="defaultTip" class="tip" style="display:none">
+    当前仍在使用默认账号密码（<code>admin</code> / <code>admin</code>），若服务暴露在公网，建议登录后前往配置页修改密码。
+  </div>
+</div>
+<script>
+(function () {
+  fetch('/api/auth/status').then(function (r) { return r.json(); }).then(function (s) {
+    if (!s.enabled || s.authenticated) {
+      location.href = '/';
+      return;
+    }
+    if (s.isDefaultCredentials) {
+      document.getElementById('defaultTip').style.display = 'block';
+    }
+  }).catch(function () {});
+
+  document.getElementById('loginForm').onsubmit = function (e) {
+    e.preventDefault();
+    var msg = document.getElementById('msg');
+    msg.textContent = '';
+    fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: document.getElementById('user').value.trim(),
+        password: document.getElementById('pass').value
+      })
+    }).then(function (r) {
+      return r.json().then(function (d) { return { ok: r.ok, d: d }; });
+    }).then(function (res) {
+      if (!res.ok) {
+        msg.textContent = (res.d && res.d.error) || '登录失败';
+        return;
+      }
+      var m = location.search.match(/[?&]next=([^&]+)/);
+      location.href = m ? decodeURIComponent(m[1]) : '/';
+    }).catch(function () {
+      msg.textContent = '网络错误，请重试';
+    });
+  };
+})();
+</script>
+</body>
+</html>

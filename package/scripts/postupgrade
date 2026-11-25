@@ -1,0 +1,28 @@
+#!/bin/sh
+# 升级后：确保目录完整、保留已有配置、更新端口记录
+PKG_NAME="${SYNOPKG_PKGNAME:-LuminaSlide}"
+PKG_VAR="${SYNOPKG_PKGVAR:-/var/packages/${PKG_NAME}/var}"
+TARGET="${SYNOPKG_PKGDEST:-/var/packages/${PKG_NAME}/target}"
+CFG="$PKG_VAR/config.json"
+
+mkdir -p "$PKG_VAR/data" "$PKG_VAR/cache" "$PKG_VAR/logs" 2>/dev/null || true
+
+# 若配置意外丢失，优先从升级备份恢复，其次复制默认配置
+if [ ! -f "$CFG" ]; then
+  if [ -n "${SYNOPKG_TEMP_UPGRADE_FOLDER:-}" ] && [ -f "$SYNOPKG_TEMP_UPGRADE_FOLDER/config.json.bak" ]; then
+    cp -p "$SYNOPKG_TEMP_UPGRADE_FOLDER/config.json.bak" "$CFG" 2>/dev/null || true
+  elif [ -f "$TARGET/conf/config.default.json" ]; then
+    cp "$TARGET/conf/config.default.json" "$CFG" 2>/dev/null || true
+  fi
+fi
+
+# 同步端口记录
+PORT=$(sed -n 's/.*"port"[[:space:]]*:[[:space:]]*\([0-9]\+\).*/\1/p' "$CFG" 2>/dev/null | head -1)
+[ -z "$PORT" ] && PORT=18666
+echo "$PORT" > "$PKG_VAR/port" 2>/dev/null || true
+
+if [ "$(id -u)" -eq 0 ] 2>/dev/null; then
+  chown -R "${PKG_NAME}:${PKG_NAME}" "$PKG_VAR" 2>/dev/null || true
+fi
+
+exit 0

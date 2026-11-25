@@ -1,0 +1,37 @@
+#!/bin/sh
+# =====================================================================
+#  安装后处理
+# =====================================================================
+PKG_NAME="${SYNOPKG_PKGNAME:-LuminaSlide}"
+PKG_VAR="${SYNOPKG_PKGVAR:-/var/packages/${PKG_NAME}/var}"
+TARGET="${SYNOPKG_PKGDEST:-/var/packages/${PKG_NAME}/target}"
+CFG="$PKG_VAR/config.json"
+
+mkdir -p "$PKG_VAR/data" "$PKG_VAR/cache" "$PKG_VAR/logs" 2>/dev/null || true
+
+# 首次安装：复制默认配置
+if [ ! -f "$CFG" ] && [ -f "$TARGET/conf/config.default.json" ]; then
+  cp "$TARGET/conf/config.default.json" "$CFG"
+fi
+
+# 应用安装向导填写的端口
+if [ -n "${wizard_port:-}" ] && [ -f "$CFG" ]; then
+  case "$wizard_port" in
+    *[!0-9]*|"") ;;
+    *)
+      if [ "$wizard_port" -ge 1 ] && [ "$wizard_port" -le 65535 ] 2>/dev/null; then
+        sed -i "s/\"port\"[[:space:]]*:[[:space:]]*[0-9]\+/\"port\": $wizard_port/" "$CFG" 2>/dev/null || true
+      fi
+      ;;
+  esac
+fi
+
+PORT=$(sed -n 's/.*"port"[[:space:]]*:[[:space:]]*\([0-9]\+\).*/\1/p' "$CFG" 2>/dev/null | head -1)
+[ -z "$PORT" ] && PORT=18666
+echo "$PORT" > "$PKG_VAR/port" 2>/dev/null || true
+
+if [ "$(id -u)" -eq 0 ] 2>/dev/null; then
+  chown -R "${PKG_NAME}:${PKG_NAME}" "$PKG_VAR" 2>/dev/null || true
+fi
+
+exit 0

@@ -1,0 +1,15 @@
+[{
+  "step_title": "LuminaSlide · Basic Settings",
+  "items": [{
+    "type": "textfield",
+    "desc": "Service port (default 18666)",
+    "subitems": [{
+      "key": "wizard_port",
+      "desc": "",
+      "validator": {
+        "allowBlank": true,
+        "regex": { "expr": "/^\\d{2,5}$/", "errorText": "Enter a 2-5 digit port" }
+      }
+    }]
+  }]
+}]

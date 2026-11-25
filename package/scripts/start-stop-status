@@ -1,0 +1,211 @@
+#!/bin/sh
+# =====================================================================
+#  拾光轮播 LuminaSlide — DSM 套件启停脚本
+#
+#  DSM 调用时提供的环境变量：
+#    SYNOPKG_PKGNAME   包名
+#    SYNOPKG_PKGDEST   安装目录 (/var/packages/<name>/target)
+#    SYNOPKG_PKGVAR    数据目录 (/var/packages/<name>/var)
+#    SYNOPKG_PKGTMP    临时目录
+#    SYNOPKG_PKGVER    版本
+# =====================================================================
+
+PACKAGE_NAME="${SYNOPKG_PKGNAME:-LuminaSlide}"
+PKG_BASE="/var/packages/${PACKAGE_NAME}"
+TARGET_DIR="${SYNOPKG_PKGDEST:-${PKG_BASE}/target}"
+VAR_DIR="${SYNOPKG_PKGVAR:-${PKG_BASE}/var}"
+LOG_DIR="${VAR_DIR}/logs"
+PID_FILE="${VAR_DIR}/slideshow.pid"
+CFG_FILE="${VAR_DIR}/config.json"
+OUT_LOG="${LOG_DIR}/slideshow.out"
+
+# ------------------------------------------------------------------ 找 node
+find_node() {
+  for c in \
+    "${TARGET_DIR}/node/bin/node" \
+    /var/packages/Node.js_v22/target/bin/node \
+    /var/packages/Node.js_v20/target/bin/node \
+    /var/packages/Node.js_v18/target/bin/node \
+    /usr/local/bin/node \
+    /usr/bin/node ; do
+    [ -x "$c" ] && { echo "$c"; return 0; }
+  done
+  command -v node 2>/dev/null && return 0
+  return 1
+}
+
+# ------------------------------------------------------------------ 找 ffmpeg
+find_ffmpeg() {
+  for c in \
+    /var/packages/ffmpeg8/target/bin/ffmpeg \
+    /var/packages/ffmpeg7/target/bin/ffmpeg \
+    /var/packages/ffmpeg6/target/bin/ffmpeg \
+    /usr/local/bin/ffmpeg \
+    /usr/bin/ffmpeg ; do
+    [ -x "$c" ] && { echo "$c"; return 0; }
+  done
+  return 1
+}
+
+is_ours() {
+  pid="$1"
+  [ -r "/proc/$pid/cmdline" ] || return 1
+  cmd=$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null) || return 1
+  case "$cmd" in
+    *"src/server.js"*) ;;
+    *) return 1 ;;
+  esac
+  cwd=$(readlink "/proc/$pid/cwd" 2>/dev/null)
+  [ "$cwd" = "$TARGET_DIR" ] && return 0
+  return 1
+}
+
+pid_by_port() {
+  port="$1"
+  hex=$(printf '%04X' "$port")
+  ino=$(awk -v pat=":${hex}" '$2 ~ pat"$" && $4=="0A" {print $10}' /proc/net/tcp /proc/net/tcp6 2>/dev/null | head -1)
+  [ -z "$ino" ] && return 0
+  for fddir in /proc/[0-9]*/fd; do
+    pid=$(basename "$(dirname "$fddir")")
+    if ls -l "$fddir" 2>/dev/null | grep -q "socket:\[${ino}\]"; then
+      is_ours "$pid" && { echo "$pid"; return 0; }
+    fi
+  done
+}
+
+get_port() {
+  # 优先级：config.json > var/port > 默认 18666
+  if [ -f "$CFG_FILE" ]; then
+    p=$(sed -n 's/.*"port"[[:space:]]*:[[:space:]]*\([0-9]\+\).*/\1/p' "$CFG_FILE" 2>/dev/null | head -1)
+    [ -n "$p" ] && { echo "$p"; return; }
+  fi
+  if [ -f "${VAR_DIR}/port" ]; then
+    p=$(cat "${VAR_DIR}/port" 2>/dev/null | tr -d '[:space:]')
+    [ -n "$p" ] && { echo "$p"; return; }
+  fi
+  echo 18666
+}
+
+# ------------------------------------------------------------------ start
+do_start() {
+  # 已在运行？
+  if [ -f "$PID_FILE" ]; then
+    OPID=$(cat "$PID_FILE" 2>/dev/null)
+    if [ -n "$OPID" ] && kill -0 "$OPID" 2>/dev/null && is_ours "$OPID"; then
+      echo "已在运行 (pid $OPID)"
+      return 0
+    fi
+    rm -f "$PID_FILE"
+  fi
+
+  NODE_BIN=$(find_node) || { echo "错误: 未找到 node 运行时，请先安装 Node.js 套件" >&2; return 1; }
+  FFMPEG_BIN=$(find_ffmpeg) || FFMPEG_BIN=""
+
+  mkdir -p "$VAR_DIR" "$VAR_DIR/data" "$VAR_DIR/cache" "$LOG_DIR"
+
+  # 首次启动：复制默认配置
+  if [ ! -f "$CFG_FILE" ]; then
+    if [ -f "${TARGET_DIR}/conf/config.default.json" ]; then
+      cp "${TARGET_DIR}/conf/config.default.json" "$CFG_FILE"
+      echo "已生成默认配置: $CFG_FILE"
+    fi
+  fi
+
+  PORT=$(get_port)
+  # 端口被占（可能是上次异常退出留下的孤儿）→ 清理
+  OLD=$(pid_by_port "$PORT")
+  if [ -n "$OLD" ]; then
+    echo "清理残留进程 (pid $OLD)"
+    kill -TERM "$OLD" 2>/dev/null
+    i=0
+    while [ $i -lt 10 ] && kill -0 "$OLD" 2>/dev/null; do sleep 1; i=$((i+1)); done
+    kill -9 "$OLD" 2>/dev/null || true
+    sleep 1
+  fi
+
+  echo "启动: $NODE_BIN (ffmpeg: ${FFMPEG_BIN:-未找到})"
+
+  cd "$TARGET_DIR" || { echo "无法进入 $TARGET_DIR" >&2; return 1; }
+
+  SLIDESHOW_HOME="$VAR_DIR" \
+  FFMPEG_PATH="$FFMPEG_BIN" \
+  NODE_ENV=production \
+  HOME="$VAR_DIR" \
+  nohup "$NODE_BIN" src/server.js >> "$OUT_LOG" 2>&1 &
+
+  echo $! > "$PID_FILE"
+  sleep 3
+
+  if kill -0 "$(cat "$PID_FILE" 2>/dev/null)" 2>/dev/null; then
+    echo "启动成功 (pid $(cat "$PID_FILE"))"
+    return 0
+  else
+    echo "启动失败，日志尾部：" >&2
+    tail -20 "$OUT_LOG" 2>/dev/null >&2
+    rm -f "$PID_FILE"
+    return 1
+  fi
+}
+
+# ------------------------------------------------------------------ stop
+do_stop() {
+  KILLED=0
+  if [ -f "$PID_FILE" ]; then
+    PID=$(cat "$PID_FILE" 2>/dev/null)
+    if [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null && is_ours "$PID"; then
+      # 优雅退出，让洗牌位置落盘
+      kill -TERM "$PID" 2>/dev/null
+      i=0
+      while [ $i -lt 20 ] && kill -0 "$PID" 2>/dev/null; do sleep 1; i=$((i+1)); done
+      kill -9 "$PID" 2>/dev/null || true
+      KILLED=1
+    fi
+    rm -f "$PID_FILE"
+  fi
+
+  # 端口兜底
+  PORT=$(get_port)
+  P2=$(pid_by_port "$PORT")
+  if [ -n "$P2" ]; then
+    kill -TERM "$P2" 2>/dev/null
+    sleep 2
+    kill -9 "$P2" 2>/dev/null || true
+    KILLED=1
+  fi
+
+  # 精确路径兜底（只认 cwd == TARGET_DIR 的 src/server.js）
+  for d in /proc/[0-9]*; do
+    p=$(basename "$d")
+    if is_ours "$p"; then
+      kill -TERM "$p" 2>/dev/null
+      sleep 1
+      kill -9 "$p" 2>/dev/null || true
+      KILLED=1
+    fi
+  done
+
+  [ "$KILLED" = "1" ] && echo "已停止" || echo "未运行"
+  return 0
+}
+
+# ------------------------------------------------------------------ status
+do_status() {
+  if [ -f "$PID_FILE" ]; then
+    PID=$(cat "$PID_FILE" 2>/dev/null)
+    if [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null && is_ours "$PID"; then
+      echo "运行中 (pid $PID, 端口 $(get_port))"
+      exit 0
+    fi
+  fi
+  echo "未运行"
+  exit 3
+}
+
+case "$1" in
+  start)   do_start ;;
+  stop)    do_stop ;;
+  status)  do_status ;;
+  restart) do_stop; sleep 1; do_start ;;
+  log)     tail -n "${2:-100}" "$OUT_LOG" 2>/dev/null || echo "无日志" ;;
+  *)       echo "用法: $0 {start|stop|status|restart|log}" >&2; exit 1 ;;
+esac

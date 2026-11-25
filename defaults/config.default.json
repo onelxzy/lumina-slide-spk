@@ -1,0 +1,82 @@
+{
+  "server": {
+    "port": 18666,
+    "host": "0.0.0.0"
+  },
+  "auth": {
+    "enabled": false,
+    "username": "admin",
+    "passwordHash": "",
+    "sessionTtlHours": 168
+  },
+  "sources": [],
+  "scan": {
+    "extensions": [
+      ".jpg",
+      ".jpeg",
+      ".png",
+      ".webp",
+      ".bmp",
+      ".tif",
+      ".tiff",
+      ".jfif",
+      ".heic",
+      ".avif"
+    ],
+    "exclude": [
+      ".gif",
+      ".mp4",
+      ".mov",
+      ".m4v",
+      ".mkv",
+      ".avi",
+      ".wmv",
+      ".flv",
+      ".webm",
+      ".ts",
+      ".m2ts"
+    ],
+    "concurrency": 1,
+    "commitEvery": 500,
+    "dirTimeoutSec": 60,
+    "pauseEveryDirs": 200,
+    "pauseMs": 200,
+    "incremental": true,
+    "followSymlinks": false,
+    "skipHidden": true,
+    "minSize": 4096
+  },
+  "image": {
+    "maxWidth": 1920,
+    "maxHeight": 1080,
+    "format": "webp",
+    "quality": 92,
+    "jpegQuality": 3,
+    "scaler": "lanczos",
+    "pixFmt": "420",
+    "allowUpscale": false,
+    "concurrency": 2,
+    "timeoutSec": 30
+  },
+  "cache": {
+    "memoryItems": 200,
+    "memoryMaxMB": 64,
+    "diskEnabled": false,
+    "diskDir": "cache",
+    "diskMaxMB": 4096
+  },
+  "play": {
+    "interval": 8,
+    "mode": "shuffle",
+    "weakRecent": 500,
+    "onRestart": "resume",
+    "fairness": "byImage",
+    "transition": "fade",
+    "showInfo": true,
+    "ambientBg": true,
+    "prefetch": 2
+  },
+  "paths": {
+    "dataDir": "data"
+  }
+}

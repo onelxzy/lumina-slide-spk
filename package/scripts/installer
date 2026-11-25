@@ -1,0 +1,14 @@
+#!/bin/sh
+# 安装/升级钩子：确保数据目录存在且属主正确
+PACKAGE_NAME="${SYNOPKG_PKGNAME:-LuminaSlide}"
+PKG_VAR="/var/packages/${PACKAGE_NAME}/var"
+
+mkdir -p "${PKG_VAR}/data" "${PKG_VAR}/cache" "${PKG_VAR}/logs" 2>/dev/null
+
+# 首次安装生成配置
+if [ ! -f "${PKG_VAR}/config.json" ]; then
+  TPL="/var/packages/${PACKAGE_NAME}/target/conf/config.default.json"
+  [ -f "$TPL" ] && cp "$TPL" "${PKG_VAR}/config.json"
+fi
+
+exit 0

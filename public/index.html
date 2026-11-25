@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0a0c10">
+<title>拾光轮播 · LuminaSlide</title>
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+
+<!-- 氛围模糊背景层 -->
+<div id="ambient" aria-hidden="true"></div>
+
+<!-- 舞台 -->
+<div id="stage">
+  <img id="pic" alt="">
+  <img id="pic2" alt="" aria-hidden="true">
+</div>
+
+<!-- 顶部信息 -->
+<div id="info">
+  <div class="info-left">
+    <div class="album-row">
+      <span class="album"></span>
+      <span id="filterBadge" class="filter-badge hidden"></span>
+    </div>
+    <span class="src"></span>
+  </div>
+  <div class="info-right">
+    <span class="pos"></span>
+  </div>
+</div>
+
+<!-- 进度条（显示距离下一张的进度） -->
+<div id="timeline"><div id="timelineFill"></div></div>
+
+<!-- 空状态 -->
+<div id="empty" class="hidden">
+  <div class="empty-icon">
+    <img src="/icon.svg" alt="LuminaSlide" width="72" height="72">
+  </div>
+  <h2 id="emptyTitle">还没有可播放的图片</h2>
+  <p id="emptyDesc">请先到配置页添加图片目录或 WebDAV 来源并开始扫描</p>
+  <div class="empty-actions">
+    <a class="btn-go" href="/admin">前往配置</a>
+    <button id="btnClearFilterEmpty" class="btn-go btn-go-ghost hidden" type="button">清除过滤条件</button>
+  </div>
+</div>
+
+<!-- 间隔快捷菜单 -->
+<div id="ivlMenu" class="popover hidden">
+  <button class="pop-item" data-ivl="3">3 秒</button>
+  <button class="pop-item" data-ivl="5">5 秒</button>
+  <button class="pop-item" data-ivl="8">8 秒</button>
+  <button class="pop-item" data-ivl="15">15 秒</button>
+  <button class="pop-item" data-ivl="30">30 秒</button>
+  <button class="pop-item" data-ivl="60">60 秒</button>
+</div>
+
+<!-- 控制栏 -->
+<div id="ctrl">
+  <button id="btnPrev" class="cbtn" title="上一张  ←">
+    <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+  </button>
+  <button id="btnPlay" class="cbtn cbtn-main" title="播放/暂停  空格">
+    <svg class="ic-pause" viewBox="0 0 24 24"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>
+    <svg class="ic-play" viewBox="0 0 24 24" style="display:none"><path d="M8 5v14l11-7z"/></svg>
+  </button>
+  <button id="btnNext" class="cbtn" title="下一张  →">
+    <svg viewBox="0 0 24 24"><path d="M16 6h2v12h-2zM6 18l8.5-6L6 6z"/></svg>
+  </button>
+
+  <span class="sep"></span>
+
+  <button id="btnSlower" class="cbtn" title="慢一点  ↓">−</button>
+  <button id="lblInterval" class="ivl-btn" title="点击选择预设间隔">8s</button>
+  <button id="btnFaster" class="cbtn" title="快一点  ↑">+</button>
+
+  <span class="sep"></span>
+
+  <button id="btnFav" class="cbtn" title="收藏当前图片  L">
+    <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+  </button>
+  <button id="btnFilter" class="cbtn" title="相册与过滤  G">
+    <svg viewBox="0 0 24 24"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>
+  </button>
+  <button id="btnInfoToggle" class="cbtn" title="显示/隐藏信息  I">
+    <svg viewBox="0 0 24 24"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+  </button>
+
+  <span class="sep"></span>
+
+  <button id="btnPip" class="cbtn" title="画中画置顶  P">
+    <svg viewBox="0 0 24 24"><path d="M19 11h-8v6h8v-6zm4 8V5c0-1.1-.9-2-2-2H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.98h18v14.04z"/></svg>
+  </button>
+  <button id="btnFull" class="cbtn" title="全屏  F">
+    <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+  </button>
+  <button id="btnHelp" class="cbtn" title="快捷键帮助  ?">?</button>
+  <button id="btnAdmin" class="cbtn" title="设置  Esc">
+    <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+  </button>
+</div>
+
+<!-- 相册与过滤抽屉 -->
+<aside id="drawer" class="drawer hidden">
+  <div class="drawer-head">
+    <h3>播放范围与相册</h3>
+    <button id="btnCloseDrawer" class="drawer-close" type="button">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="drawer-tabs">
+      <button id="fltAll" class="chip active" type="button">全部图片</button>
+      <button id="fltFav" class="chip" type="button">♥ 仅看收藏</button>
+    </div>
+    <div class="drawer-field">
+      <label for="fltSource">按来源过滤</label>
+      <select id="fltSource"><option value="">全部来源</option></select>
+    </div>
+    <div class="drawer-field">
+      <label for="fltSearch">搜索相册</label>
+      <input id="fltSearch" type="text" placeholder="输入相册关键词…">
+    </div>
+    <div id="albumList" class="album-list"></div>
+  </div>
+</aside>
+
+<!-- 快捷键帮助 -->
+<div id="helpModal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3>快捷键与手势</h3>
+      <button id="btnCloseHelp" class="drawer-close" type="button">✕</button>
+    </div>
+    <div class="shortcut-grid">
+      <div><kbd>空格</kbd> / <kbd>Enter</kbd></div><div>播放 / 暂停</div>
+      <div><kbd>←</kbd> / <kbd>→</kbd></div><div>上一张 / 下一张</div>
+      <div><kbd>↑</kbd> / <kbd>↓</kbd></div><div>加快 / 减慢切换</div>
+      <div><kbd>L</kbd></div><div>收藏 / 取消收藏</div>
+      <div><kbd>G</kbd></div><div>打开相册与过滤</div>
+      <div><kbd>I</kbd></div><div>切换信息角标</div>
+      <div><kbd>P</kbd></div><div>画中画置顶</div>
+      <div><kbd>F</kbd></div><div>全屏切换</div>
+      <div><kbd>Esc</kbd></div><div>进入配置页</div>
+      <div>触屏滑动</div><div>左右滑切换图片</div>
+    </div>
+  </div>
+</div>
+
+<!-- 首次提示 -->
+<div id="hint" class="hidden">
+  <kbd>空格</kbd> 暂停 &nbsp; <kbd>←</kbd><kbd>→</kbd> 切换 &nbsp; <kbd>L</kbd> 收藏 &nbsp; <kbd>G</kbd> 相册 &nbsp; <kbd>P</kbd> 画中画
+</div>
+
+<div id="toast"></div>
+
+<script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+    ".url": {
+        "SYNO.SDS.LuminaSlide.Application": {
+            "title": "拾光轮播",
+            "desc": "海量图库随机轮播播放器",
+            "icon": "images/icon_{0}.png",
+            "type": "url",
+            "protocol": "http",
+            "port": "18666",
+            "allUsers": true
+        }
+    }
+}

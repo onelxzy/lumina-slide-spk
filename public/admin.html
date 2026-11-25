@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>拾光轮播 · LuminaSlide 配置</title>
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<link rel="stylesheet" href="/admin.css">
+</head>
+<body>
+<header>
+  <div class="brand">
+    <img src="/icon.svg" alt="" width="28" height="28">
+    <div>
+      <h1>拾光轮播 <span class="sub">LuminaSlide</span></h1>
+    </div>
+  </div>
+  <div class="head-right">
+    <span id="dirtyBadge" class="dirty-badge hidden">有未保存更改</span>
+    <button id="btnLogout" class="btn btn-ghost hidden" type="button">退出登录</button>
+    <a href="/" class="btn btn-ghost">▶ 去播放</a>
+    <button id="save" class="btn btn-primary">保存配置</button>
+  </div>
+</header>
+
+<div id="banner" class="banner hidden"></div>
+
+<div class="layout">
+  <nav class="nav" id="nav">
+    <button class="nav-item active" data-tab="overview">概览与扫描</button>
+    <button class="nav-item" data-tab="sources">数据来源</button>
+    <button class="nav-item" data-tab="quality">画质与预览</button>
+    <button class="nav-item" data-tab="playback">播放设置</button>
+    <button class="nav-item" data-tab="security">网络与安全</button>
+    <button class="nav-item" data-tab="maint">维护与黑名单</button>
+  </nav>
+
+  <main>
+    <!-- ========== Tab 1: 概览与扫描 ========== -->
+    <div class="tab-panel active" id="tab-overview">
+      <section class="card">
+        <h2>运行状态</h2>
+        <div class="stats" id="stats"></div>
+      </section>
+
+      <section class="card">
+        <h2>索引扫描</h2>
+        <p class="hint">索引扫描仅在手动触发时执行，不会在后台自动运行。增量扫描将跳过修改时间未变化的目录。</p>
+
+        <div class="row">
+          <button id="btnScanInc" class="btn btn-primary">增量扫描</button>
+          <button id="btnScanFull" class="btn">全量重建</button>
+          <button id="btnScanCancel" class="btn btn-danger" disabled>取消</button>
+          <label class="inline"><input type="checkbox" id="scanOne"> 仅扫描指定来源</label>
+          <select id="scanSourceSel" disabled style="width:auto;min-width:140px"></select>
+        </div>
+
+        <div class="progress-wrap">
+          <div class="progress-bar"><div id="scanBar"></div></div>
+          <div id="scanInfo" class="hint">尚未扫描</div>
+        </div>
+        <div id="scanPath" class="path-line"></div>
+      </section>
+
+      <section class="card">
+        <h2>快捷操作</h2>
+        <div class="row" style="margin-bottom:0">
+          <button id="btnReshuffle" class="btn">立即重洗牌</button>
+          <button id="btnClearCacheQuick" class="btn btn-danger">清空图像缓存</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- ========== Tab 2: 数据来源 ========== -->
+    <div class="tab-panel" id="tab-sources">
+      <section class="card">
+        <h2>数据来源 <span class="hint-inline">支持本地路径与 WebDAV 多源混合</span></h2>
+        <div id="sources"></div>
+        <div class="row" style="margin-top:12px;margin-bottom:0">
+          <button id="addLocal" class="btn btn-small">+ 添加本地路径</button>
+          <button id="addWebdav" class="btn btn-small">+ 添加 WebDAV</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- ========== Tab 3: 画质与预览 ========== -->
+    <div class="tab-panel" id="tab-quality">
+      <section class="card">
+        <h2>画质设置</h2>
+        <p class="hint">
+          图像将按原始比例等比缩放至目标包围盒内，不拉伸且默认不放大小图。
+        </p>
+
+        <div class="grid2">
+          <label>最大宽度 (px)
+            <input type="number" id="imgW" min="128" max="7680" step="2">
+          </label>
+          <label>最大高度 (px)
+            <input type="number" id="imgH" min="128" max="4320" step="2">
+          </label>
+        </div>
+        <div class="presets">
+          <button class="btn btn-small" data-w="1280" data-h="720">720p</button>
+          <button class="btn btn-small" data-w="1920" data-h="1080">1080p</button>
+          <button class="btn btn-small" data-w="2560" data-h="1440">1440p</button>
+          <button class="btn btn-small" data-w="3840" data-h="2160">4K</button>
+        </div>
+
+        <div class="grid2">
+          <label>输出格式
+            <select id="imgFormat">
+              <option value="webp">WebP</option>
+              <option value="jpeg">JPEG</option>
+              <option value="avif">AVIF</option>
+            </select>
+          </label>
+          <label>压缩质量 <span class="val" id="qualityVal">92</span>
+            <input type="range" id="imgQuality" min="60" max="100" step="1">
+            <span class="hint">WebP 推荐 92，JPEG 将自动换算为对应质量参数</span>
+          </label>
+        </div>
+
+        <div class="grid2">
+          <label>缩放算法
+            <select id="imgScaler">
+              <option value="lanczos">Lanczos</option>
+              <option value="bicubic">Bicubic</option>
+              <option value="bilinear">Bilinear</option>
+            </select>
+          </label>
+          <label>转码并发上限
+            <select id="imgConcurrency">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="inline"><input type="checkbox" id="allowUpscale"> 允许放大小图</label>
+
+        <div class="preview-box">
+          <div class="preview-head">
+            <b>效果预览</b>
+            <span class="hint" style="margin:0">按当前参数实时生成样张</span>
+            <button id="btnPreview" class="btn btn-small">刷新预览</button>
+          </div>
+          <img id="previewImg" class="hidden" alt="">
+          <div id="previewEmpty" class="preview-empty">暂无预览图像，请先完成图库扫描</div>
+          <div id="previewMeta" class="hint"></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ========== Tab 4: 播放与画中画 ========== -->
+    <div class="tab-panel" id="tab-playback">
+      <section class="card">
+        <h2>播放设置</h2>
+        <div class="grid2">
+          <label>切换间隔（秒）
+            <input type="number" id="playInterval" min="2" max="600">
+          </label>
+          <label>随机模式
+            <select id="playMode">
+              <option value="shuffle">洗牌袋</option>
+              <option value="random">纯随机</option>
+              <option value="weak">弱去重</option>
+            </select>
+          </label>
+        </div>
+        <div class="grid2">
+          <label>重启后行为
+            <select id="playRestart">
+              <option value="resume">断点续播</option>
+              <option value="reshuffle">重新洗牌</option>
+            </select>
+          </label>
+          <label>公平性策略
+            <select id="playFairness">
+              <option value="byImage">按图片数量加权</option>
+              <option value="byAlbum">按相册均分</option>
+            </select>
+          </label>
+        </div>
+        <div class="grid2">
+          <label>过渡动画
+            <select id="playTransition">
+              <option value="fade">淡入淡出</option>
+              <option value="none">无过渡</option>
+              <option value="kenburns">缓慢缩放</option>
+            </select>
+          </label>
+          <label>预取张数
+            <select id="playPrefetch">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+            </select>
+          </label>
+        </div>
+        <div class="row" style="margin-bottom:0">
+          <label class="inline"><input type="checkbox" id="playShowInfo"> 显示信息角标</label>
+          <label class="inline"><input type="checkbox" id="playAmbientBg" checked> 启用氛围模糊背景</label>
+        </div>
+      </section>
+    </div>
+
+    <!-- ========== Tab 5: 网络与安全 ========== -->
+    <div class="tab-panel" id="tab-security">
+      <section class="card">
+        <h2>访问控制</h2>
+        <p class="hint">内网环境可按需关闭认证；若将服务暴露至公网，请务必启用登录验证并修改默认密码。</p>
+        <div class="row">
+          <label class="inline"><input type="checkbox" id="authEnabled"> 启用登录验证</label>
+        </div>
+        <div class="grid2">
+          <label>管理员用户名
+            <input type="text" id="authUsername" placeholder="admin">
+          </label>
+          <label>新密码
+            <input type="password" id="authNewPassword" placeholder="留空保持当前密码（初始为 admin）" autocomplete="new-password">
+          </label>
+        </div>
+        <div id="authWarnTip" class="hint tip-box hidden"></div>
+      </section>
+
+      <section class="card">
+        <h2>服务端口</h2>
+        <p class="hint">默认使用 HTTP 端口 <code>18666</code>，变更后需重启服务生效；如需公网 HTTPS 访问，可通过群晖反向代理实现。</p>
+        <div class="grid2">
+          <label>HTTP 端口
+            <input type="number" id="httpPort" min="1" max="65535">
+          </label>
+        </div>
+      </section>
+    </div>
+
+    <!-- ========== Tab 6: 维护与黑名单 ========== -->
+    <div class="tab-panel" id="tab-maint">
+      <section class="card">
+        <h2>缓存管理</h2>
+        <p class="hint">随机轮播默认采用内存 LRU（张数与字节双重封顶），避免频繁写盘并防止内存溢出；仅在远端存储极慢时建议开启磁盘缓存。</p>
+        <div class="grid2">
+          <label>内存缓存张数上限
+            <input type="number" id="cacheMemItems" min="1" max="2000">
+          </label>
+          <label>内存缓存容量上限 (MB)
+            <input type="number" id="cacheMemMaxMB" min="8" max="2048">
+          </label>
+        </div>
+        <div class="row">
+          <label class="inline"><input type="checkbox" id="cacheDiskEnabled"> 启用磁盘二级缓存</label>
+        </div>
+        <div class="grid2">
+          <label>磁盘缓存上限 (MB)
+            <input type="number" id="cacheDiskMB" min="50" max="102400">
+          </label>
+        </div>
+        <div class="row" style="margin-bottom:0">
+          <button id="btnClearCache" class="btn btn-danger">清空缓存</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>扫描参数（高级）</h2>
+        <div class="grid2">
+          <label>每批提交条数
+            <input type="number" id="scanCommit" min="50" max="5000">
+          </label>
+          <label>每 N 个目录休息
+            <input type="number" id="scanPauseEvery" min="0" max="10000">
+          </label>
+        </div>
+        <div class="grid2">
+          <label>休息时长（毫秒）
+            <input type="number" id="scanPauseMs" min="0" max="60000">
+          </label>
+          <label>最小文件大小（字节）
+            <input type="number" id="scanMinSize" min="0" max="10485760">
+          </label>
+        </div>
+        <div class="row" style="margin-bottom:0">
+          <label class="inline"><input type="checkbox" id="scanIncremental"> 启用增量扫描</label>
+          <label class="inline"><input type="checkbox" id="scanSkipHidden"> 跳过隐藏文件与目录</label>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>失败文件黑名单 <span class="hint-inline">转换失败或源返回错误的文件将自动跳过</span></h2>
+        <div id="blacklist" class="blacklist"></div>
+        <button id="btnClearBlack" class="btn btn-danger btn-small">清空全部黑名单</button>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+<script src="/admin.js"></script>
+</body>
+</html>

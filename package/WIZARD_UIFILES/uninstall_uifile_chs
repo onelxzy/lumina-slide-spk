@@ -1,0 +1,16 @@
+[{
+  "step_title": "卸载 拾光轮播 (LuminaSlide)",
+  "items": [{
+    "type": "singleselect",
+    "desc": "请选择如何处理现有套件数据：",
+    "subitems": [{
+      "key": "wizard_keep_data",
+      "desc": "保留配置、索引数据库与缓存，便于后续重新安装时恢复",
+      "defaultValue": true
+    }, {
+      "key": "wizard_delete_data",
+      "desc": "删除全部套件数据（不会影响原始图片文件）",
+      "defaultValue": false
+    }]
+  }]
+}]

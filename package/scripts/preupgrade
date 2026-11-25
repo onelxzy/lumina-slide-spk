@@ -1,0 +1,14 @@
+#!/bin/sh
+# 升级前：优雅停止服务，并备份关键配置
+PKG_NAME="${SYNOPKG_PKGNAME:-LuminaSlide}"
+PKG_VAR="${SYNOPKG_PKGVAR:-/var/packages/${PKG_NAME}/var}"
+SSS="$(dirname "$0")/start-stop-status"
+[ -x "$SSS" ] || SSS="/var/packages/${PKG_NAME}/scripts/start-stop-status"
+[ -x "$SSS" ] && "$SSS" stop >/dev/null 2>&1 || true
+
+if [ -n "${SYNOPKG_TEMP_UPGRADE_FOLDER:-}" ] && [ -f "$PKG_VAR/config.json" ]; then
+  mkdir -p "$SYNOPKG_TEMP_UPGRADE_FOLDER" 2>/dev/null || true
+  cp -p "$PKG_VAR/config.json" "$SYNOPKG_TEMP_UPGRADE_FOLDER/config.json.bak" 2>/dev/null || true
+fi
+
+exit 0

@@ -1,0 +1,18 @@
+#!/bin/sh
+# =====================================================================
+#  卸载后处理
+# =====================================================================
+PKG_NAME="${SYNOPKG_PKGNAME:-LuminaSlide}"
+PKG_VAR="${SYNOPKG_PKGVAR:-/var/packages/${PKG_NAME}/var}"
+PKG_HOME="${SYNOPKG_PKGHOME:-/var/packages/${PKG_NAME}/home}"
+PKG_ETC="/var/packages/${PKG_NAME}/etc"
+
+if [ "${wizard_delete_data:-}" = "true" ]; then
+  for d in "$PKG_VAR" "$PKG_HOME" "$PKG_ETC"; do
+    if [ -d "$d" ] && [ -n "$(ls -A "$d" 2>/dev/null)" ]; then
+      find "$d" -mindepth 1 -delete 2>/dev/null || true
+    fi
+  done
+fi
+
+exit 0

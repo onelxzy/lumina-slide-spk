@@ -1,0 +1,64 @@
+name: Build & Release SPK
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Package version (e.g. 1.0.0)"
+        required: true
+        default: "1.0.0"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Syntax check
+        run: |
+          for f in src/*.js public/*.js; do
+            node -c "$f"
+          done
+
+      - name: Determine version
+        id: ver
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            V="${{ github.event.inputs.version }}"
+          else
+            V="${GITHUB_REF_NAME#v}"
+          fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+
+      - name: Build SPK
+        run: python3 build.py "${{ steps.ver.outputs.version }}"
+
+      - name: Publish Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          body: |
+            LuminaSlide ${{ steps.ver.outputs.version }}
+
+            架构：noarch（全机型通用，依赖套件中心 Node.js 22+ 与 ffmpeg）
+
+            安装：套件中心 → 手动安装 → 选择 .spk
+          files: |
+            dist/LuminaSlide_${{ steps.ver.outputs.version }}_noarch.spk
